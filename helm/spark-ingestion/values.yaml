@@ -1,0 +1,62 @@
+replicaCount: 2
+
+image:
+  repository: spark-k8s-ingestion-api
+  tag: latest
+  pullPolicy: IfNotPresent
+
+sparkImage:
+  repository: spark-k8s-ingestion-spark
+  tag: latest
+
+service:
+  type: ClusterIP
+  port: 8000
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: spark-ingestion.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+
+serviceAccount:
+  create: true
+  name: spark-ingestion
+  annotations: {}
+
+spark:
+  namespace: default
+  serviceAccount: spark
+  driverCores: 1
+  driverMemory: 1g
+  executorCores: 1
+  executorMemory: 1g
+  executorInstances: 2
+
+env:
+  INGESTION_K8S_IN_CLUSTER: "true"
+  INGESTION_K8S_NAMESPACE: "default"
+
+prometheus:
+  enabled: true
+  serviceMonitor:
+    enabled: false

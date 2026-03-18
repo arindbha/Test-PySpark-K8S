@@ -1,0 +1,39 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+      image_tag:
+        description: "Docker image tag to deploy"
+        required: true
+        type: string
+
+env:
+  HELM_RELEASE: spark-ingestion
+  HELM_CHART: helm/spark-ingestion
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-helm@v4
+
+      - name: Deploy with Helm
+        run: |
+          helm upgrade --install $HELM_RELEASE $HELM_CHART \
+            --namespace spark-ingestion \
+            --create-namespace \
+            --set image.tag=${{ inputs.image_tag }} \
+            --set sparkImage.tag=${{ inputs.image_tag }} \
+            --values $HELM_CHART/values.yaml \
+            --wait --timeout 5m

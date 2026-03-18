@@ -1,0 +1,6 @@
+apiVersion: v2
+name: spark-ingestion
+description: Helm chart for Spark K8S ingestion framework with FastAPI gateway
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
