@@ -1,4 +1,1 @@
-from spark_jobs.sources.gcs_source import GCSSource
-from spark_jobs.sources.bigquery_source import BigQuerySource
-
-__all__ = ["GCSSource", "BigQuerySource"]
+"""Sources package — imports are lazy to avoid requiring pyspark at import time."""

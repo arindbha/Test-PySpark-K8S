@@ -1,0 +1,43 @@
+pipeline_name: example_pipeline
+execution_mode: local
+datasets:
+  - source:
+      name: customers
+      type: filesystem
+      config:
+        path: /data/input/customers.csv
+        format: csv
+        options:
+          header: "true"
+          inferSchema: "true"
+    destination:
+      type: gcs
+      config:
+        path: gs://bucket/output/customers.parquet
+        format: parquet
+        mode: overwrite
+    transforms:
+      - type: filter
+        config:
+          condition: "age > 18"
+  - source:
+      name: orders
+      type: jdbc
+      config:
+        url: "jdbc:postgresql://host:5432/db"
+        table: orders
+        driver: org.postgresql.Driver
+    destination:
+      type: bigquery
+      config:
+        table: project.dataset.orders
+        temp_gcs_bucket: staging-bucket
+        mode: append
+    transforms:
+      - type: sql
+        config:
+          query: "SELECT *, CURRENT_DATE as load_date FROM __table__"
+spark_config:
+  driver_memory: 2g
+  executor_memory: 4g
+  executor_instances: 3

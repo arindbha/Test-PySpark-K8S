@@ -5,6 +5,10 @@ metadata:
   namespace: {{ .Values.spark.namespace }}
   labels:
     {{- include "spark-ingestion.labels" . | nindent 4 }}
+  {{- if .Values.spark.workloadIdentityEmail }}
+  annotations:
+    iam.gke.io/gcp-service-account: {{ .Values.spark.workloadIdentityEmail }}
+  {{- end }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role

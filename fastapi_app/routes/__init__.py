@@ -1,3 +1,3 @@
-from fastapi_app.routes import health, ingestion
+from fastapi_app.routes import health, pipelines, runs
 
-__all__ = ["health", "ingestion"]
+__all__ = ["health", "pipelines", "runs"]

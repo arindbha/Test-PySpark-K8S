@@ -8,13 +8,37 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     debug: bool = False
 
-    k8s_namespace: str = "default"
-    k8s_in_cluster: bool = True
-    spark_image: str = "apache/spark:4.0.0"
-    spark_service_account: str = "spark"
+    # Metadata store
+    metadata_store_type: str = "filesystem"  # filesystem | bigquery
+    metadata_dir: str = "./data"
 
-    gcp_project: str = ""
-    gcs_temp_bucket: str = ""
+    # Pipeline configs
+    pipelines_dir: str = "./pipelines"
+
+    # Kubernetes / Spark
+    k8s_master_url: str = "https://kubernetes.default.svc"
+    spark_image: str = "apache/spark:4.0.0"
+    spark_namespace: str = "default"
+    spark_service_account: str = "spark"
+    spark_home: str = "/opt/spark"
+    spark_file_upload_path: str = ""
+
+    # Deploy & execution defaults
+    default_deploy_mode: str = "cluster"
+    default_execution_mode: str = "local"
+
+    # GCP / BigQuery
+    bq_project_id: str = ""
+    bq_dataset: str = ""
+    gcp_credentials_path: str = ""
+
+    # Dataproc
+    dataproc_project: str = ""
+    dataproc_region: str = ""
+    dataproc_cluster: str = ""
+
+    # Concurrency
+    max_concurrent_jobs: int = 10
 
     model_config = {"env_prefix": "INGESTION_"}
 

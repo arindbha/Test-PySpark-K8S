@@ -46,15 +46,33 @@ serviceAccount:
 spark:
   namespace: default
   serviceAccount: spark
+  workloadIdentityEmail: ""  # e.g. sa@project.iam.gserviceaccount.com
   driverCores: 1
   driverMemory: 1g
   executorCores: 1
   executorMemory: 1g
   executorInstances: 2
 
-env:
-  INGESTION_K8S_IN_CLUSTER: "true"
-  INGESTION_K8S_NAMESPACE: "default"
+# Application configuration (injected via ConfigMap)
+config:
+  metadataStoreType: filesystem
+  metadataDir: ./data
+  pipelinesDir: ./pipelines
+  k8sMasterUrl: https://kubernetes.default.svc
+  defaultExecutionMode: k8s
+  defaultDeployMode: cluster
+  maxConcurrentJobs: 10
+  bqProjectId: ""
+  bqDataset: ""
+  dataprocProject: ""
+  dataprocRegion: ""
+  dataprocCluster: ""
+
+# Extra env vars (override or supplement ConfigMap)
+env: {}
+
+secrets:
+  gcpServiceAccountKey: ""  # base64-encoded GCP SA key JSON
 
 prometheus:
   enabled: true
