@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "spark-k8s-ingestion"
+version = "0.1.0"
+description = "Spark on Kubernetes ingestion framework with FastAPI gateway"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.27.0",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+    "pyyaml>=6.0",
+    "prometheus-fastapi-instrumentator>=6.1.0",
+    "kubernetes-asyncio>=29.0.0",
+    "google-cloud-bigquery>=3.13.0",
+    "google-cloud-dataproc>=5.8.0",
+    "google-cloud-storage>=2.14.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.23.0",
+    "httpx>=0.26.0",
+    "ruff>=0.2.0",
+]
+spark = [
+    "pyspark>=4.0.0",
+    "paramiko>=3.4.0",
+    "requests>=2.31.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.setuptools.packages.find]
+include = ["fastapi_app*", "spark_jobs*"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120

@@ -1,0 +1,12 @@
+"""Health check route."""
+
+from fastapi import APIRouter
+
+from fastapi_app.models.ingestion import HealthResponse
+
+router = APIRouter(tags=["health"])
+
+
+@router.get("/health", response_model=HealthResponse)
+async def health_check() -> HealthResponse:
+    return HealthResponse()
