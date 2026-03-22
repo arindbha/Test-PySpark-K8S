@@ -21,9 +21,17 @@ from fastapi_app.models.enums import (
 # ---------------------------------------------------------------------------
 
 
+class ConnectionConfig(BaseModel):
+    """Reusable connection definition referenced by datasets via ``connection`` name."""
+
+    type: SourceType
+    config: dict = Field(default_factory=dict)
+
+
 class SourceConfig(BaseModel):
     name: str = Field(..., description="Unique name for tracking this source")
-    type: SourceType
+    type: SourceType | None = Field(default=None, description="Source type (inferred from connection when omitted)")
+    connection: str | None = Field(default=None, description="Name of a connection defined in the top-level connections map")
     config: dict = Field(default_factory=dict)
 
 
@@ -53,6 +61,10 @@ class SparkConfig(BaseModel):
 
 class PipelineConfig(BaseModel):
     pipeline_name: str = Field(..., min_length=1, max_length=128)
+    connections: dict[str, ConnectionConfig] = Field(
+        default_factory=dict,
+        description="Reusable named connections that datasets can reference",
+    )
     datasets: list[DatasetConfig] = Field(..., min_length=1)
     spark_config: SparkConfig = Field(default_factory=SparkConfig)
     execution_mode: ExecutionMode = ExecutionMode.LOCAL

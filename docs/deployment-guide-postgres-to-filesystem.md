@@ -78,21 +78,31 @@ SQL
 Create a pipeline YAML that reads both tables from PostgreSQL and writes them as
 Parquet files on the local filesystem.
 
+Connection details are defined once in the top-level `connections` map and
+referenced by name in each dataset — no need to repeat url, driver, and
+credentials for every table.
+
 ```bash
 cat > pipelines/postgres_to_local.yaml << 'EOF'
 pipeline_name: postgres_to_local
 execution_mode: local
 
+# Define the connection once — all datasets reference it by name.
+connections:
+  sales_db:
+    type: jdbc
+    config:
+      url: "jdbc:postgresql://localhost:5432/sales_db"
+      driver: org.postgresql.Driver
+      user: ingest_user
+      password: ingest_pass
+
 datasets:
   - source:
       name: customers
-      type: jdbc
+      connection: sales_db
       config:
-        url: "jdbc:postgresql://localhost:5432/sales_db"
         table: customers
-        driver: org.postgresql.Driver
-        user: ingest_user
-        password: ingest_pass
     destination:
       type: gcs
       config:
@@ -110,13 +120,9 @@ datasets:
 
   - source:
       name: orders
-      type: jdbc
+      connection: sales_db
       config:
-        url: "jdbc:postgresql://localhost:5432/sales_db"
         table: orders
-        driver: org.postgresql.Driver
-        user: ingest_user
-        password: ingest_pass
     destination:
       type: gcs
       config:
@@ -149,6 +155,9 @@ EOF
 > **Note:** The `gcs` destination type writes to any path Spark can access —
 > local filesystem, GCS, S3, or HDFS. For local paths, use an absolute path
 > like `/data/output/`.
+
+> **Connections are optional.** You can still inline `type` and full `config`
+> directly on each source — existing pipelines continue to work unchanged.
 
 ---
 
@@ -305,28 +314,19 @@ INSERT INTO orders (customer_id, amount, status) VALUES
     (1, 250.00, 'completed'), (2, 75.50, 'pending'), (3, 180.00, 'shipped');
 SQL
 
-# Run with JDBC URL override pointing to Docker service name
+# Override the connection URL for Docker networking
 curl -s -X POST http://localhost:8000/v1/pipelines/run \
   -H "Content-Type: application/json" \
   -d '{
     "pipeline_name": "postgres_to_local",
     "override_params": {
-      "datasets": [
-        {
-          "source": {
-            "config": {
-              "url": "jdbc:postgresql://postgres:5432/sales_db"
-            }
-          }
-        },
-        {
-          "source": {
-            "config": {
-              "url": "jdbc:postgresql://postgres:5432/sales_db"
-            }
+      "connections": {
+        "sales_db": {
+          "config": {
+            "url": "jdbc:postgresql://postgres:5432/sales_db"
           }
         }
-      ]
+      }
     }
   }' | python3 -m json.tool
 ```
@@ -403,16 +403,21 @@ cat > pipelines/postgres_to_local_k8s.yaml << 'EOF'
 pipeline_name: postgres_to_local_k8s
 execution_mode: k8s
 
+connections:
+  sales_db:
+    type: jdbc
+    config:
+      url: "jdbc:postgresql://postgres-postgresql.ingestion.svc.cluster.local:5432/sales_db"
+      driver: org.postgresql.Driver
+      user: ingest_user
+      password: ingest_pass
+
 datasets:
   - source:
       name: customers
-      type: jdbc
+      connection: sales_db
       config:
-        url: "jdbc:postgresql://postgres-postgresql.ingestion.svc.cluster.local:5432/sales_db"
         table: customers
-        driver: org.postgresql.Driver
-        user: ingest_user
-        password: ingest_pass
     destination:
       type: gcs
       config:
@@ -427,13 +432,9 @@ datasets:
 
   - source:
       name: orders
-      type: jdbc
+      connection: sales_db
       config:
-        url: "jdbc:postgresql://postgres-postgresql.ingestion.svc.cluster.local:5432/sales_db"
         table: orders
-        driver: org.postgresql.Driver
-        user: ingest_user
-        password: ingest_pass
     destination:
       type: gcs
       config:
@@ -489,8 +490,9 @@ kubectl -n ingestion get pods -l spark-role=driver --watch
 
 ## 6. Using Runtime Overrides
 
-You don't need separate YAML files for different environments. Use
-`override_params` at runtime to swap connection details:
+You don't need separate YAML files for different environments. Override the
+connection at runtime — every dataset using that connection picks up the change
+automatically:
 
 ```bash
 curl -s -X POST http://localhost:8000/v1/pipelines/run \
@@ -498,24 +500,15 @@ curl -s -X POST http://localhost:8000/v1/pipelines/run \
   -d '{
     "pipeline_name": "postgres_to_local",
     "override_params": {
-      "datasets": [
-        {
-          "source": {
-            "config": {
-              "url": "jdbc:postgresql://prod-db:5432/sales_db",
-              "user": "prod_reader",
-              "password": "prod_secret"
-            }
-          },
-          "destination": {
-            "config": {
-              "path": "/data/output/prod/customers",
-              "format": "csv",
-              "mode": "append"
-            }
+      "connections": {
+        "sales_db": {
+          "config": {
+            "url": "jdbc:postgresql://prod-db:5432/sales_db",
+            "user": "prod_reader",
+            "password": "prod_secret"
           }
         }
-      ]
+      }
     }
   }'
 ```
